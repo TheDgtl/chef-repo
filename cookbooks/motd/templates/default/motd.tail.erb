@@ -1,0 +1,12 @@
+Welcome to node <%= @nodename %> running <%= @image %> flavor <%= @flavor %>
+Kernel: <%= @kernel %>
+Region: <%= @region %>
+Public DNS (IP): <%= @publicdns %> (<%= @publicip %>)
+Private DNS (IP): <%= @privatedns %> (<%= @privateip %>)
+Roles:
+<% if @roles.length == 0 %>
+    None
+<% end %>
+<% @roles.each do |role| -%>
+	<%= role %>
+<%  end -%>
