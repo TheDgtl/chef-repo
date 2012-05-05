@@ -7,26 +7,26 @@ else
 end
 
 
-set[:multicraft][:home] = '/opt/multicraft'
-set[:multicraft][:download_url] = mc_url
-set[:multicraft][:tar_name] = 'multicraft.tar.gz'
-set[:multicraft][:key] = ''
+default[:multicraft][:home] = '/opt/multicraft'
+default[:multicraft][:download_url] = mc_url
+default[:multicraft][:tar_name] = 'multicraft.tar.gz'
+default[:multicraft][:key] = ''
 
-set[:multicraft][:user] = 'multicraft'
-set[:multicraft][:group] = 'multicraft'
+default[:multicraft][:user] = 'multicraft'
+default[:multicraft][:group] = 'multicraft'
 
-set[:multicraft][:daemon][:listen_ip] = '0.0.0.0'
-set[:multicraft][:daemon][:listen_port] = '25465'
-set[:multicraft][:daemon][:external_ip] = open('http://ifconfig.me/ip').read
-#set[:multicraft][:daemon][:password] = 'random' #TODO: Fetch from panel server
-set[:multicraft][:daemon][:name] = 'Multicraft Daemon'
-#set[:multicraft][:daemon][:id] = '1'
-set[:multicraft][:daemon][:log_size] = '20971520'
+default[:multicraft][:daemon][:listen_ip] = '0.0.0.0'
+default[:multicraft][:daemon][:listen_port] = '25465'
+default[:multicraft][:daemon][:external_ip] = open('http://ifconfig.me/ip').read
+#default[:multicraft][:daemon][:password] = 'random' #TODO: Fetch from panel server
+default[:multicraft][:daemon][:name] = 'Multicraft Daemon'
+#default[:multicraft][:daemon][:id] = '1'
+default[:multicraft][:daemon][:log_size] = '20971520'
 
-set[:multicraft][:ftp][:enabled] = 'false'
-set[:multicraft][:ftp][:port] = '21'
-set[:multicraft][:ftp][:forbidden] = '\.(jar|exe|bat|pif|sh)$'
+default[:multicraft][:ftp][:enabled] = 'false'
+default[:multicraft][:ftp][:port] = '21'
+default[:multicraft][:ftp][:forbidden] = '\.(jar|exe|bat|pif|sh)$'
 
 # Convert memory to MB
 mem = node['memory']['total']
-set[:multicraft][:max_memory] = (mem[0, mem.length - 2].to_i) / 1024
+default[:multicraft][:max_memory] = (mem[0, mem.length - 2].to_i) / 1024
