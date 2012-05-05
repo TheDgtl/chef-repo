@@ -27,6 +27,8 @@ default[:multicraft][:ftp][:enabled] = 'false'
 default[:multicraft][:ftp][:port] = '21'
 default[:multicraft][:ftp][:forbidden] = '\.(jar|exe|bat|pif|sh)$'
 
+default[:multicraft][:web][:root] = '/var/www/panel'
+
 # Convert memory to MB
 mem = node['memory']['total']
 default[:multicraft][:max_memory] = (mem[0, mem.length - 2].to_i) / 1024
