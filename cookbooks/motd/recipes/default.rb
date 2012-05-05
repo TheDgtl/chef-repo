@@ -7,20 +7,6 @@
 # All rights reserved - Do Not Redistribute
 #
 
-# EC2 specific variables
-image = ''
-flavor = ''
-region = ''
-nodename = ''
-if node.attribute?('ec2') 
-  image = node['ec2']['ami_id']
-  flavor = node['ec2']['instance_type']
-  region = node['ec2']['placement_availability_zone']
-  nodename = node['ec2']['instance_id']
-end
-
-roles = node.run_list.roles
-
 template "/etc/motd.tail" do
   source "motd.tail.erb"
   group "root"
@@ -29,16 +15,17 @@ template "/etc/motd.tail" do
   action :create
   variables(
 	# EC2 specific variables
-	:nodename => nodename,
-	:image => image,
-	:flavor => flavor,
-	:region => region,
-    # More general variables
+	:node_name => node['motd']['node_name'],
+	:image => node['motd']['image'],
+	:flavor => node['motd']['flavor'],
+	:region => node['motd']['region'],
+    # Cloud specific variables
+	:public_dns => node['motd']['public_dns'],
+	:public_ip => node['motd']['public_ip'],
+	:private_dns => node['motd']['private_dns'],
+	:private_ip => node['motd']['private_ip'],
+	# General variables
 	:kernel => node['os_version'],
-	:publicdns => node['cloud']['public_hostname'],
-	:publicip => node['cloud']['public_ipv4'],
-	:privatedns => node['cloud']['local_hostname'],
-	:privateip => node['cloud']['local_ipv4'],
-	:roles => roles
+	:roles => node['motd']['roles']
   )
 end
