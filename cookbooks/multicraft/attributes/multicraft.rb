@@ -17,15 +17,21 @@ default[:multicraft][:group] = 'multicraft'
 
 default[:multicraft][:daemon][:listen_ip] = '0.0.0.0'
 default[:multicraft][:daemon][:listen_port] = '25465'
-default[:multicraft][:daemon][:external_ip] = open('http://ifconfig.me/ip').read
-#default[:multicraft][:daemon][:password] = 'random' #TODO: Fetch from panel server
+if attribute?('ec2')
+  default[:multicraft][:daemon][:external_ip] = node['ec2']['external_ipv4']
+else
+  default[:multicraft][:daemon][:external_ip] = open('http://ifconfig.me/ip').read
+end
 default[:multicraft][:daemon][:name] = 'Multicraft Daemon'
-#default[:multicraft][:daemon][:id] = '1'
 default[:multicraft][:daemon][:log_size] = '20971520'
 
 default[:multicraft][:ftp][:enabled] = 'false'
 default[:multicraft][:ftp][:port] = '21'
 default[:multicraft][:ftp][:forbidden] = '\.(jar|exe|bat|pif|sh)$'
+
+default[:multicraft][:db][:host] = 'localhost'
+default[:multicraft][:db][:user] = 'multicraft'
+default[:multicarft][:db][:database] = 'multicraft'
 
 default[:multicraft][:web][:root] = '/var/www/panel'
 
