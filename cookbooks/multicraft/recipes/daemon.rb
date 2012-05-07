@@ -50,13 +50,14 @@ execute "tar" do
   only_if { File.exists?(local) }
 end
 
-# Copy the bin and jar folders to [:home]
+# Copy the bin and jar folders to [:home] if they don't exist
 execute "cp" do
   user node[:multicraft][:user]
   group node[:multicraft][:group]
   cwd "#{node[:multicraft][:tmp_dir]}/multicraft"
   command "cp -r bin jar #{node[:multicraft][:home]}"
   only_if { File.exists?("#{node[:multicraft][:tmp_dir]}/multicraft/bin") }
+  not_if { File.exists?("#{node[:multicraft][:home]}/bin") }
 end
 
 # Remove temp files

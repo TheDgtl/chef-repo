@@ -2,6 +2,7 @@
 
 # THIS RECIPE IS DESTRUCTIVE. It will drop existing tables and reload them.
 include_recipe "database"
+include_recipe "mysql::server"
 
 panel = search(:node, "role:multicraft_panel").first
 

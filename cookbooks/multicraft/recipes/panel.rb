@@ -3,7 +3,7 @@
 # (Include code used from MySQL Server cookbook)
 ::Chef::Recipe.send(:include, Opscode::OpenSSL::Password)
 include_recipe "apache2"
-include_recipe "database"
+include_recipe "mysql::server"
 include_recipe "php::module_mysql"
 include_recipe "apache2::mod_php5"
 
@@ -66,6 +66,7 @@ execute "cp" do
   cwd "#{node[:multicraft][:tmp_dir]}/multicraft"
   command "cp -r panel/* #{node[:multicraft][:web][:root]}"
   only_if { File.exists?("#{node[:multicraft][:tmp_dir]}/multicraft/panel") }
+  not_if { File.exists?("#{node[:multicraft][:web][:root]}/panel") } 
 end
 
 # Generate the config.php file
