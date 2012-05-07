@@ -94,42 +94,6 @@ end
   end
 end
 
-# TODO: This is now destructive. Move to a db_bootstrap recipe
-# Create the MySQL Database/User
-connection_info = {:host => 'localhost', :username => 'root', :password => node['mysql']['server_root_password']}
-mysql_database node[:multicraft][:db][:database] do
-  connection connection_info
-  action :drop
-end
-mysql_database node[:multicraft][:db][:database] do
-  connection connection_info
-  action :create
-end
-mysql_database_user node[:multicraft][:db][:user] do
-  connection connection_info
-  password node[:multicraft][:db][:password]
-  action :create
-end
-mysql_database_user node[:multicraft][:db][:user] do
-  connection connection_info
-  password node[:multicraft][:db][:password]
-  database_name node[:multicraft][:db][:database]
-  action :grant
-end
-
-# Import the panel/daemon MySQL schema and updates
-["panel", "daemon"].each do |db|
-  i = 1
-  sql = "#{node[:multicraft][:web][:root]}/protected/data/#{db}/schema.mysql.sql"
-  while File.exists?(sql) do
-    execute "mysql-import-multicraft" do
-      command "#{node['mysql']['mysql_bin']} -u root -p\"#{node['mysql']['server_root_password']}\" -D #{node[:multicraft][:db][:database]} < #{sql}"
-    end
-    sql = "#{node[:multicraft][:web][:root]}/protected/data/#{db}/update.mysql.#{i}.sql"
-    i += 1
-  end
-end
-
 # Create a web_app in Apache using the fqdn
 web_app "multicraft" do
   template "web_app.conf.erb"
