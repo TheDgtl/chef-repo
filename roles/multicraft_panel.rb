@@ -2,7 +2,7 @@ name "multicraft_panel"
 description "Control panel for Multicraft daemons"
 run_list(
   "recipe[apache2]",
-  "recipe[apache2::mod_php5]",
+  "recipe[mysql::server]",
   "recipe[database]",
   "recipe[multicraft::panel]"
 )
