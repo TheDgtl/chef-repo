@@ -71,10 +71,11 @@ directory node[:multicraft][:tmp_dir] do
   action :delete
 end
 
-# Create the config file
+# Only run the following if we have a panel
 panels = search(:node, "roles:multicraft_panel") || []
 Chef::Log.error('No multicraft panels found') if panels.empty?
 panels.each do |panel|
+  # Create the config file
   template "#{node[:multicraft][:home]}/bin/multicraft.conf" do
     source "multicraft.conf.erb"
     owner node[:multicraft][:user]
@@ -105,6 +106,7 @@ panels.each do |panel|
 	  :ftp_forbidden => node[:multicraft][:ftp][:forbidden]
     )
   end
+
   # Create a multicraft.key if supplied
   file "#{node[:multicraft][:home]}/multicraft.key" do
     action :create
@@ -114,4 +116,13 @@ panels.each do |panel|
     mode "0600"
     not_if {panel[:multicraft][:key].empty?}
   end
+end
+
+# Launch/Restart the daemon if we have a panel
+execute "multicraft start" do
+  user node[:multicraft][:user]
+  group node[:multicraft][:group]
+  cwd "#{node[:multicraft][:home]}/bin"
+  command "./multicraft restart"
+  not_if { panels.empty? }
 end
