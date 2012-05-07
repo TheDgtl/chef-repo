@@ -47,13 +47,14 @@ end
 file local do
   owner node['apache']['user']
   group node['apache']['group']
-  action :create
+  action :touch
 end
 
 # Extract the Multicraft tar
 execute "tar" do
   cwd node[:multicraft][:tmp_dir]
   command "tar -zxf multicraft.tar.gz"
+  only_if { File.exists?("multicraft.tar.gz") }
 end
 
 # Create the webroot
@@ -70,6 +71,7 @@ execute "cp" do
   group node['apache']['group']
   cwd "#{node[:multicraft][:tmp_dir]}/multicraft"
   command "cp -r panel/* #{node[:multicraft][:web][:root]}"
+  only_if { File.exists?("panel") }
 end
 
 # Generate the config.php file

@@ -46,13 +46,14 @@ end
 file local do
   owner node['apache']['user']
   group node['apache']['group']
-  action :create
+  action :touch
 end
 
 # Extract the Multicraft tar
 execute "tar" do
   cwd node[:multicraft][:tmp_dir]
   command "tar -zxf multicraft.tar.gz"
+  only_if { File.exists?("multicraft.tar.gz") }
 end
 
 # Copy the bin and jar folders to [:home]
@@ -61,6 +62,7 @@ execute "cp" do
   group node[:multicraft][:group]
   cwd "#{node[:multicraft][:tmp_dir]}/multicraft"
   command "cp -r bin jar #{node[:multicraft][:home]}"
+  only_if { File.exists?("bin") }
 end
 
 # Remove temp files
