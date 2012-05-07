@@ -26,13 +26,13 @@ directory node[:multicraft][:tmp_dir] do
 end
 
 # Get the latest Multicraft tar. Use HTTP_HEAD to bypass re-download
-remote_file "#{node[:multicraft][:tmp_dir]}/multicraft.tar.gz" do
+local = "/tmp/multicraft.tar.gz"
+remote_file local do
   source node[:multicraft][:download_url]
   mode "0644"
   action :nothing
 end
 
-local = "#{node[:multicraft][:home]}/chefrun"
 http_request "HEAD #{node[:multicraft][:download_url]}" do
   message ""
   url node[:multicraft][:download_url]
@@ -40,20 +40,14 @@ http_request "HEAD #{node[:multicraft][:download_url]}" do
   if File.exists?(local)
     headers "If-Modified-Since" => File.mtime(local).httpdate
   end
-  notifies :create,"remote_file[#{node[:multicraft][:tmp_dir]}/multicraft.tar.gz]", :immediately
-end
-
-file local do
-  owner node['apache']['user']
-  group node['apache']['group']
-  action :touch
+  notifies :create,"remote_file[#{local}]", :immediately
 end
 
 # Extract the Multicraft tar
 execute "tar" do
   cwd node[:multicraft][:tmp_dir]
-  command "tar -zxf multicraft.tar.gz"
-  only_if { File.exists?("multicraft.tar.gz") }
+  command "tar -zxf #{local}"
+  only_if { File.exists?(local) }
 end
 
 # Copy the bin and jar folders to [:home]
@@ -62,7 +56,7 @@ execute "cp" do
   group node[:multicraft][:group]
   cwd "#{node[:multicraft][:tmp_dir]}/multicraft"
   command "cp -r bin jar #{node[:multicraft][:home]}"
-  only_if { File.exists?("bin") }
+  only_if { File.exists?("#{node[:multicraft][:tmp_dir]}/multicraft/bin") }
 end
 
 # Remove temp files

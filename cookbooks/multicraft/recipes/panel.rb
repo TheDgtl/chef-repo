@@ -26,37 +26,6 @@ directory node[:multicraft][:tmp_dir] do
   action :create
 end
 
-# Get the latest Multicraft tar. Use HTTP_HEAD to bypass re-download
-remote_file "#{node[:multicraft][:tmp_dir]}/multicraft.tar.gz" do
-  source node[:multicraft][:download_url]
-  mode "0644"
-  action :nothing
-end
-
-local = "#{node[:multicraft][:web][:root]}/chefrun"
-http_request "HEAD #{node[:multicraft][:download_url]}" do
-  message ""
-  url node[:multicraft][:download_url]
-  action :head
-  if File.exists?(local)
-	headers "If-Modified-Since" => File.mtime(local).httpdate
-  end
-  notifies :create,"remote_file[#{node[:multicraft][:tmp_dir]}/multicraft.tar.gz]", :immediately
-end
-
-file local do
-  owner node['apache']['user']
-  group node['apache']['group']
-  action :touch
-end
-
-# Extract the Multicraft tar
-execute "tar" do
-  cwd node[:multicraft][:tmp_dir]
-  command "tar -zxf multicraft.tar.gz"
-  only_if { File.exists?("multicraft.tar.gz") }
-end
-
 # Create the webroot
 directory node[:multicraft][:web][:root] do
   action :create
@@ -65,13 +34,38 @@ directory node[:multicraft][:web][:root] do
   recursive true
 end
 
+# Get the latest Multicraft tar. Use HTTP_HEAD to bypass re-download
+local = "/tmp/multicraft.tar.gz"
+remote_file local do
+  source node[:multicraft][:download_url]
+  mode "0644"
+  action :nothing
+end
+
+http_request "HEAD #{node[:multicraft][:download_url]}" do
+  message ""
+  url node[:multicraft][:download_url]
+  action :head
+  if File.exists?(local)
+	headers "If-Modified-Since" => File.mtime(local).httpdate
+  end
+  notifies :create,"remote_file[#{local}]", :immediately
+end
+
+# Extract the Multicraft tar
+execute "tar" do
+  cwd node[:multicraft][:tmp_dir]
+  command "tar -zxf #{local}"
+  only_if { File.exists?(local) }
+end
+
 # Copy the panel folder to the webroot
 execute "cp" do
   user node['apache']['user']
   group node['apache']['group']
   cwd "#{node[:multicraft][:tmp_dir]}/multicraft"
   command "cp -r panel/* #{node[:multicraft][:web][:root]}"
-  only_if { File.exists?("panel") }
+  only_if { File.exists?("#{node[:multicraft][:tmp_dir]}/multicraft/panel") }
 end
 
 # Generate the config.php file
