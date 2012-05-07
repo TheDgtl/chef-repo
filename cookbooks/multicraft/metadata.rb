@@ -6,5 +6,6 @@ long_description IO.read(File.join(File.dirname(__FILE__), 'README.md'))
 version          "0.0.1"
 depends          "java"
 depends          "apache2"
-depends          "apache2::mod_php5"
-depends          "mysql::server"
+depends          "php"
+depends          "mysql"
+depends          "database"

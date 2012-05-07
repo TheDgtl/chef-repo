@@ -19,35 +19,55 @@ user node[:multicraft][:user] do
   gid node[:multicraft][:group]
   supports :manage_home => true
 end
-=begin
-# Get the latest Multicraft tar
-remote_file "/tmp/multicraft.tar.gz" do
+
+# Create a temp dir to work in
+directory node[:multicraft][:tmp_dir] do
+  action :create
+end
+
+# Get the latest Multicraft tar. Use HTTP_HEAD to bypass re-download
+remote_file "#{node[:multicraft][:tmp_dir]}/multicraft.tar.gz" do
   source node[:multicraft][:download_url]
   mode "0644"
+  action :nothing
+end
+
+local = "#{node[:multicraft][:home]}/chefrun"
+http_request "HEAD #{node[:multicraft][:download_url]}" do
+  message ""
+  url node[:multicraft][:download_url]
+  action :head
+  if File.exists?(local)
+    headers "If-Modified-Since" => File.mtime(local).httpdate
+  end
+  notifies :create,"remote_file[#{node[:multicraft][:tmp_dir]}/multicraft.tar.gz]", :immediately
+end
+
+file local do
+  owner node['apache']['user']
+  group node['apache']['group']
+  action :create
 end
 
 # Extract the Multicraft tar
 execute "tar" do
-  user node[:multicraft][:user]
-  group node[:multicraft][:group]
-  cwd "/tmp"
-  command "tar -zxf #{node[:multicraft][:tar_name]}"
+  cwd node[:multicraft][:tmp_dir]
+  command "tar -zxf multicraft.tar.gz"
 end
 
-# Move the bin and jar folders to [:home]
-execute "mv" do
+# Copy the bin and jar folders to [:home]
+execute "cp" do
   user node[:multicraft][:user]
   group node[:multicraft][:group]
-  cwd "/tmp/multicraft"
-  command "mv bin jar #{node[:multicraft][:home]}"
+  cwd "#{node[:multicraft][:tmp_dir]}/multicraft"
+  command "cp -r bin jar #{node[:multicraft][:home]}"
 end
 
-# Remove the tmp file
-directory "/tmp/multicraft" do
+# Remove temp files
+directory node[:multicraft][:tmp_dir] do
   recursive true
   action :delete
 end
-=end
 
 # Create the config file
 panels = search(:node, "roles:multicraft_panel") || []
@@ -73,14 +93,23 @@ panels.each do |panel|
 	  :daemon_password => panel[:multicraft][:daemon][:password],
 	  :daemon_id => panel[:multicraft][:daemon][:id],
   
-	  :sql_host => panel[:multicraft][:sql][:host],
-	  :sql_database => panel[:multicraft][:sql][:database],
-	  :sql_user => panel[:multicraft][:sql][:user],
-	  :sql_password => panel[:multicraft][:sql][:password],
+	  :sql_host => panel[:multicraft][:db][:host],
+	  :sql_database => panel[:multicraft][:db][:database],
+	  :sql_user => panel[:multicraft][:db][:user],
+	  :sql_password => panel[:multicraft][:db][:password],
   
 	  :ftp_enabled => node[:multicraft][:ftp][:enabled],
 	  :ftp_port => node[:multicraft][:ftp][:port],
 	  :ftp_forbidden => node[:multicraft][:ftp][:forbidden]
     )
+  end
+  # Create a multicraft.key if supplied
+  file "#{node[:multicraft][:home]}/multicraft.key" do
+    action :create
+    content panel[:multicraft][:key]
+    owner node[:multicraft][:user]
+    group node[:multicraft][:group]
+    mode "0600"
+    not_if {panel[:multicraft][:key].empty?}
   end
 end
