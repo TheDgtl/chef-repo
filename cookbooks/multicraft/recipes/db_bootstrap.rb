@@ -23,6 +23,11 @@ mysql_database panel[:multicraft][:db][:database] do
   action :create
 end
 
+mysql_database_user pane[:multicraft][:db][:user] do
+  connection connection_info
+  action :drop
+end
+
 mysql_database_user panel[:multicraft][:db][:user] do
   connection connection_info
   password panel[:multicraft][:db][:password]

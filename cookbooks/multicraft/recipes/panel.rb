@@ -38,6 +38,7 @@ remote_file local do
   source node[:multicraft][:download_url]
   mode "0644"
   action :nothing
+  notifies :run, "execute[tar]", :immediately
 end
 
 http_request "HEAD #{node[:multicraft][:download_url]}" do
@@ -54,7 +55,8 @@ end
 execute "tar" do
   cwd node[:multicraft][:tmp_dir]
   command "tar -zxf #{local}"
-  only_if { File.exists?(local) }
+  action :nothing
+  notifies :run, "execute[cp]", :immediately
 end
 
 # Copy the panel folder to the webroot
@@ -64,7 +66,7 @@ execute "cp" do
   cwd "#{node[:multicraft][:tmp_dir]}/multicraft"
   command "cp -r panel/* #{node[:multicraft][:web][:root]}"
   only_if { File.exists?("#{node[:multicraft][:tmp_dir]}/multicraft/panel") }
-  not_if { File.exists?("#{node[:multicraft][:web][:root]}/panel") } 
+  action :nothing
 end
 
 # Generate the config.php file

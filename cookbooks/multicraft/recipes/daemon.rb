@@ -31,6 +31,7 @@ remote_file local do
   source node[:multicraft][:download_url]
   mode "0644"
   action :nothing
+  notifies :run, "execute[tar]", :immediately
 end
 
 http_request "HEAD #{node[:multicraft][:download_url]}" do
@@ -40,7 +41,7 @@ http_request "HEAD #{node[:multicraft][:download_url]}" do
   if File.exists?(local)
     headers "If-Modified-Since" => File.mtime(local).httpdate
   end
-  notifies :create,"remote_file[#{local}]", :immediately
+  notifies :create, "remote_file[#{local}]", :immediately
 end
 
 # Extract the Multicraft tar
@@ -48,6 +49,8 @@ execute "tar" do
   cwd node[:multicraft][:tmp_dir]
   command "tar -zxf #{local}"
   only_if { File.exists?(local) }
+  action :nothing
+  notifies :run, "execute[cp]", :immediately
 end
 
 # Copy the bin and jar folders to [:home] if they don't exist
@@ -57,7 +60,8 @@ execute "cp" do
   cwd "#{node[:multicraft][:tmp_dir]}/multicraft"
   command "cp -r bin jar #{node[:multicraft][:home]}"
   only_if { File.exists?("#{node[:multicraft][:tmp_dir]}/multicraft/bin") }
-  not_if { File.exists?("#{node[:multicraft][:home]}/bin") }
+  action :nothing
+  notifies :run, "execute[multicraft]"
 end
 
 # Remove temp files
@@ -75,7 +79,7 @@ panels.each do |panel|
     source "multicraft.conf.erb"
     owner node[:multicraft][:user]
     group node[:multicraft][:group]
-    mode "0600"
+    mode "0660"
     variables(
       :user => node[:multicraft][:user],
 	  :group => node[:multicraft][:group],
@@ -100,24 +104,30 @@ panels.each do |panel|
 	  :ftp_port => node[:multicraft][:ftp][:port],
 	  :ftp_forbidden => node[:multicraft][:ftp][:forbidden]
     )
+	notifies :run, "execute[multicraft]"
   end
 
   # Create a multicraft.key if supplied
-  file "#{node[:multicraft][:home]}/multicraft.key" do
-    action :create
-    content panel[:multicraft][:key]
+  template "#{node[:multicraft][:home]}/multicraft.key" do
+    source "multicraft.key.erb"
+    variables(
+	  :key => panel[:multicraft][:key]
+	)
     owner node[:multicraft][:user]
     group node[:multicraft][:group]
-    mode "0600"
+    mode "0660"
     not_if {panel[:multicraft][:key].empty?}
+	notifies :run, "execute[multicraft]"
   end
 end
 
 # Launch/Restart the daemon if we have a panel
-execute "multicraft start" do
+execute "multicraft" do
   user node[:multicraft][:user]
   group node[:multicraft][:group]
   cwd "#{node[:multicraft][:home]}/bin"
+  environment ({'PYTHON_EGG_CACHE' => node[:multicraft][:home]})
   command "./multicraft restart"
   not_if { panels.empty? }
+  action :nothing
 end
