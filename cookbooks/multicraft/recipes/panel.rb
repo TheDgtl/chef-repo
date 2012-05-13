@@ -15,7 +15,6 @@ end
 
 # Set persistant node variables
 node.set_unless[:multicraft][:daemon][:password] = secure_password
-node.set_unless[:multicraft][:daemon][:id] = 1
 node.set_unless[:multicraft][:db][:password] = secure_password
 node.set_unless[:multicraft][:key] = ''
 
@@ -34,33 +33,34 @@ end
 
 # Get the latest Multicraft tar. Use HTTP_HEAD to bypass re-download
 local = "/tmp/multicraft.tar.gz"
-remote_file local do
+remote_file "remote-panel" do
+  path local
   source node[:multicraft][:download_url]
   mode "0644"
   action :nothing
-  notifies :run, "execute[tar]", :immediately
+  notifies :run, "execute[tar-panel]", :immediately
 end
 
-http_request "HEAD #{node[:multicraft][:download_url]}" do
+http_request "HEAD-panel" do
   message ""
   url node[:multicraft][:download_url]
   action :head
   if File.exists?(local)
 	headers "If-Modified-Since" => File.mtime(local).httpdate
   end
-  notifies :create,"remote_file[#{local}]", :immediately
+  notifies :create,"remote_file[remote-panel]", :immediately
 end
 
 # Extract the Multicraft tar
-execute "tar" do
+execute "tar-panel" do
   cwd node[:multicraft][:tmp_dir]
   command "tar -zxf #{local}"
   action :nothing
-  notifies :run, "execute[cp]", :immediately
+  notifies :run, "execute[cp-panel]", :immediately
 end
 
 # Copy the panel folder to the webroot
-execute "cp" do
+execute "cp-panel" do
   user node['apache']['user']
   group node['apache']['group']
   cwd "#{node[:multicraft][:tmp_dir]}/multicraft"
@@ -90,7 +90,7 @@ end
 end
 
 # Create a web_app in Apache using the fqdn
-web_app "multicraft" do
+web_app "multicraft-app" do
   template "web_app.conf.erb"
   server_name fqdn
   server_aliases [node['fqdn']]

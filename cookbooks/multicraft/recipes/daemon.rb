@@ -27,41 +27,47 @@ end
 
 # Get the latest Multicraft tar. Use HTTP_HEAD to bypass re-download
 local = "/tmp/multicraft.tar.gz"
-remote_file local do
-  source node[:multicraft][:download_url]
-  mode "0644"
-  action :nothing
-  notifies :run, "execute[tar]", :immediately
-end
 
-http_request "HEAD #{node[:multicraft][:download_url]}" do
+http_request "HEAD-daemon" do
   message ""
   url node[:multicraft][:download_url]
   action :head
-  if File.exists?(local)
+  if File.exists?(local) && File.exists?("#{node[:multicraft][:home]}/bin")
     headers "If-Modified-Since" => File.mtime(local).httpdate
   end
-  notifies :create, "remote_file[#{local}]", :immediately
+  if File.exists?("#{node[:multicraft][:home]}/bin")
+    notifies :create, "remote_file[remote-daemon]", :immediately
+  else
+    notifies :run, "execute[tar-daemon]", :immediately
+  end
+end
+
+remote_file "remote-daemon" do
+  path local
+  source node[:multicraft][:download_url]
+  mode "0644"
+  action :nothing
+  notifies :run, "execute[tar-daemon]", :immediately
 end
 
 # Extract the Multicraft tar
-execute "tar" do
+execute "tar-daemon" do
   cwd node[:multicraft][:tmp_dir]
   command "tar -zxf #{local}"
   only_if { File.exists?(local) }
   action :nothing
-  notifies :run, "execute[cp]", :immediately
+  notifies :run, "execute[cp-daemon]", :immediately
 end
 
 # Copy the bin and jar folders to [:home] if they don't exist
-execute "cp" do
+execute "cp-daemon" do
   user node[:multicraft][:user]
   group node[:multicraft][:group]
   cwd "#{node[:multicraft][:tmp_dir]}/multicraft"
   command "cp -r bin jar #{node[:multicraft][:home]}"
   only_if { File.exists?("#{node[:multicraft][:tmp_dir]}/multicraft/bin") }
   action :nothing
-  notifies :run, "execute[multicraft]"
+  notifies :run, "execute[multicraft-daemon]"
 end
 
 # Remove temp files
@@ -93,7 +99,6 @@ panels.each do |panel|
 	  :daemon_log_size => node[:multicraft][:daemon][:log_size],
   
 	  :daemon_password => panel[:multicraft][:daemon][:password],
-	  :daemon_id => panel[:multicraft][:daemon][:id],
   
 	  :sql_host => panel[:multicraft][:db][:host],
 	  :sql_database => panel[:multicraft][:db][:database],
@@ -104,7 +109,7 @@ panels.each do |panel|
 	  :ftp_port => node[:multicraft][:ftp][:port],
 	  :ftp_forbidden => node[:multicraft][:ftp][:forbidden]
     )
-	notifies :run, "execute[multicraft]"
+	notifies :run, "execute[multicraft-daemon]"
   end
 
   # Create a multicraft.key if supplied
@@ -117,12 +122,12 @@ panels.each do |panel|
     group node[:multicraft][:group]
     mode "0660"
     not_if {panel[:multicraft][:key].empty?}
-	notifies :run, "execute[multicraft]"
+	notifies :run, "execute[multicraft-daemon]"
   end
 end
 
 # Launch/Restart the daemon if we have a panel
-execute "multicraft" do
+execute "multicraft-daemon" do
   user node[:multicraft][:user]
   group node[:multicraft][:group]
   cwd "#{node[:multicraft][:home]}/bin"
